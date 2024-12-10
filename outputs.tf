@@ -39,7 +39,7 @@ output "file_system_size_in_bytes" {
 }
 
 output "access_points_arns" {
-  description = "ARN(s) of the access point(s)"
+  description = "The ARN(s) of the access point(s)"
   value       = try(values(aws_efs_access_point.this)[*].arn, null)
 }
 
@@ -49,7 +49,7 @@ output "access_points_file_system_arn" {
 }
 
 output "access_points_file_system_ids" {
-  description = "ID(s) of the access point(s)"
+  description = "The ID(s) of the access point(s)"
   value       = try(values(aws_efs_access_point.this)[*].id, null)
 }
 
@@ -74,7 +74,7 @@ output "mount_targets_file_system_dns_name" {
 }
 
 output "mount_targets_dns_names" {
-  description = "The DNS name(s) for the mount target(s) in each subnet/AZ, following the format [az].[filesystem-id].efs.[region].amazonaws.com"
+  description = "The DNS name(s) for the mount target(s) in each subnet/AZ, following the format `[az].[filesystem-id].efs.[region].amazonaws.com`"
   value       = try(aws_efs_mount_target.this[*].mount_target_dns_name, null)
 }
 
