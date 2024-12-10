@@ -1,12 +1,22 @@
+locals {
+  default_token = "terraform-${formatdate("YYYYMMDDhhmmss", timestamp())}-${substr(uuid(), 0, 12)}"
+
+  creation_token = (
+    var.encrypted ? (
+      coalesce(var.creation_token, local.default_token)
+    ) : null
+  )
+}
+
 data "aws_iam_policy_document" "this" {
-  count = var.policy_configuration.statements != null ? 1 : 0
+  count = try(var.policy_configuration != null && var.policy_configuration.statements != null, false) ? 1 : 0
 
   override_policy_documents = var.policy_configuration.override_policy_documents
   policy_id                 = var.policy_configuration.policy_id
   source_policy_documents   = var.policy_configuration.source_policy_documents
 
   dynamic "statement" {
-    for_each = var.policy_configuration.statements != null ? var.policy_configuration.statements : []
+    for_each = try(var.policy_configuration != null ? coalesce(var.policy_configuration.statements, []) : [], [])
 
     content {
       actions = statement.value.actions
@@ -52,17 +62,18 @@ data "aws_iam_policy_document" "this" {
 }
 
 data "aws_kms_key" "elastic_file_system" {
+  count  = try(var.replication_configuration != null && var.replication_configuration.kms_key_id == null, false) ? 1 : 0
   key_id = "alias/aws/elasticfilesystem"
 }
 
 resource "aws_efs_file_system" "this" {
   availability_zone_name = var.availability_zone_name
-  creation_token         = var.creation_token
+  creation_token         = local.creation_token
   encrypted              = var.encrypted
   kms_key_id             = var.kms_key_id
 
   dynamic "lifecycle_policy" {
-    for_each = [for k, v in var.lifecycle_policy : { (k) = v }]
+    for_each = try([for k, v in var.lifecycle_policy : { (k) = v }], [])
 
     content {
       transition_to_ia                    = try(lifecycle_policy.value.transition_to_ia, null)
@@ -109,7 +120,7 @@ resource "aws_efs_replication_configuration" "this" {
       region                 = destination.value.region
       availability_zone_name = destination.value.availability_zone_name
       file_system_id         = destination.value.file_system_id
-      kms_key_id             = destination.value.kms_key_id != null ? destination.value.kms_key_id : data.aws_kms_key.elastic_file_system.id
+      kms_key_id             = destination.value.kms_key_id != null ? destination.value.kms_key_id : data.aws_kms_key.elastic_file_system[count.index].id
     }
   }
 }
