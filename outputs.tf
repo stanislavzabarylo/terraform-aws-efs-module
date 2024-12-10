@@ -40,17 +40,17 @@ output "file_system_size_in_bytes" {
 
 output "access_points_arns" {
   description = "ARN(s) of the access point(s)"
-  value       = values(aws_efs_access_point.this)[*].arn
+  value       = try(values(aws_efs_access_point.this)[*].arn, null)
 }
 
 output "access_points_file_system_arn" {
   description = "The Amazon Resource Name (ARN) of the EFS file system associated with the access point(s)"
-  value       = values(aws_efs_access_point.this)[0].file_system_arn
+  value       = try(values(aws_efs_access_point.this)[0].file_system_arn, null)
 }
 
 output "access_points_file_system_ids" {
   description = "ID(s) of the access point(s)"
-  value       = values(aws_efs_access_point.this)[*].id
+  value       = try(values(aws_efs_access_point.this)[*].id, null)
 }
 
 output "backup_policy_id" {
