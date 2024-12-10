@@ -11,13 +11,17 @@ variable "availability_zone_name" {
 }
 
 variable "creation_token" {
-  description = "A unique name to your encryption key. Required if using KMS key"
+  description = <<-EOT
+A unique name used to ensure idempotent file system creation. 
+If not specified, defaults to an auto-generated string combining timestamp and UUID in the format: 
+`"terraform-<YYYYMMDDhhmmss>-<random_uuid>"` (defined as a local value in `main.tf` file)
+EOT
   type        = string
   default     = null
 }
 
 variable "encrypted" {
-  description = "If `true`, the disk will be encrypted"
+  description = "If `true`, the disk will be encrypted. Defaults to `false`"
   type        = bool
   default     = false
 }
@@ -33,8 +37,9 @@ variable "lifecycle_policy" {
 Configuration for EFS lifecycle policy transitions. Supports the following settings:
 
 <ul><li>`"transition_to_archive"`: (Optional) Indicates how long it takes to transition files to the Archive storage class. 
+  Requires `"transition_to_ia"` to be specified, with `"performance_mode"` set to `"generalPurpose"` and `"throughput_mode"` set to `"elastic"`.
   Valid values: `"AFTER_1_DAY"`, `"AFTER_7_DAYS"`, `"AFTER_14_DAYS"`, `"AFTER_30_DAYS"`, `"AFTER_60_DAYS"`, `"AFTER_90_DAYS"`, 
-  `"AFTER_180_DAYS"`, `"AFTER_270_DAYS"`, `"AFTER_365_DAYS"`. Requires `transition_to_ia` to be set.</ul></li>
+  `"AFTER_180_DAYS"`, `"AFTER_270_DAYS"`, `"AFTER_365_DAYS"`</ul></li>
 
 <ul><li>`"transition_to_ia"`: (Optional) Indicates how long it takes to transition files to the IA storage class. 
   Valid values: `"AFTER_1_DAY"`, `"AFTER_7_DAYS"`, `"AFTER_14_DAYS"`, `"AFTER_30_DAYS"`, `"AFTER_60_DAYS"`, `"AFTER_90_DAYS"`, 
@@ -49,20 +54,21 @@ EOT
   validation {
     condition = var.lifecycle_policy == null ? true : (
       lookup(var.lifecycle_policy, "transition_to_archive", null) == null ? true : contains([
-        "AFTER_90_DAYS"
+        "AFTER_1_DAY", "AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS",
+        "AFTER_180_DAYS", "AFTER_270_DAYS", "AFTER_365_DAYS"
       ], lookup(var.lifecycle_policy, "transition_to_archive"))
     )
-    error_message = "transition_to_archive must be \"AFTER_90_DAYS\""
+    error_message = "transition_to_archive must be one of: \"AFTER_1_DAY\", \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\", \"AFTER_180_DAYS\", \"AFTER_270_DAYS\", \"AFTER_365_DAYS\""
   }
 
   validation {
     condition = var.lifecycle_policy == null ? true : (
       lookup(var.lifecycle_policy, "transition_to_ia", null) == null ? true : contains([
-        "AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS",
-        "AFTER_60_DAYS", "AFTER_90_DAYS"
+        "AFTER_1_DAY", "AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS",
+        "AFTER_180_DAYS", "AFTER_270_DAYS", "AFTER_365_DAYS"
       ], lookup(var.lifecycle_policy, "transition_to_ia"))
     )
-    error_message = "transition_to_ia must be one of: \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\""
+    error_message = "transition_to_ia must be one of: \"AFTER_1_DAY\", \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\", \"AFTER_180_DAYS\", \"AFTER_270_DAYS\", \"AFTER_365_DAYS\""
   }
 
   validation {
@@ -105,7 +111,7 @@ EOT
 }
 
 variable "performance_mode" {
-  description = "The file system performance mode. Can be either `\"generalPurpose\"` or `\"maxIO\"`"
+  description = "The file system performance mode. Can be either `\"generalPurpose\"` or `\"maxIO\"`. Defaults to `\"generalPurpose\"`"
   type        = string
   default     = "generalPurpose"
 
@@ -132,7 +138,10 @@ variable "provisioned_throughput_in_mibps" {
 }
 
 variable "throughput_mode" {
-  description = "Throughput mode for the file system. Valid values: `\"bursting\"`, `\"provisioned\"`, or `\"elastic\"`. When using `\"provisioned\"`, also set `provisioned_throughput_in_mibps`"
+  description = <<-EOT
+Throughput mode for the file system. Valid values: `"bursting"`, `"provisioned"`, or `"elastic"`.
+When using `"provisioned"`, also set `provisioned_throughput_in_mibps`". Deffults to `"bursting"`
+EOT
   type        = string
   default     = "bursting"
 
@@ -143,7 +152,7 @@ variable "throughput_mode" {
 }
 
 variable "enable_automatic_backups" {
-  description = "If `true`, automatic backups will be enabled for the file system"
+  description = "If `true`, automatic backups will be enabled for the file system. Defaults to `false`"
   type        = bool
   default     = false
 }
@@ -160,7 +169,7 @@ Configuration block for EFS replication configuration. Supports the following se
 <ul><li>`file_system_id`: (Optional) The ID of an existing file system to use as the destination for replication. If not specified, 
   a new file system will be created with default settings</ul></li>
 
-<ul><li>`kms_key_id`: (Optional) The ARN, ID alias, or alias ARN of the AWS KMS key used to encrypt the destination file system. t
+<ul><li>`kms_key_id`: (Optional) The ARN, ID alias, or alias ARN of the AWS KMS key used to encrypt the destination file system.
   The default KMS key for EFS `"/aws/elasticfilesystem"` will be used</ul></li>
 EOT
   type = object({
@@ -228,7 +237,7 @@ Configuration block for EFS mount targets. Accepts a list of objects with the fo
 
 <ul><li>`subnet_id`: (Required) The ID of the subnet to add the mount target in</li>
 <li>`ip_address`: (Optional) The IPv4 address within the subnet's CIDR range where the mount target will be created</li>
-<li>`security_groups`: (Optional) A list of security group IDs to associate with the mount target</li></ul>  
+<li>`security_groups`: (Optional) A list of security group IDs (up to 5 items) to associate with the mount target</li></ul>  
 EOT
   type = list(object({
     subnet_id       = string
@@ -327,7 +336,7 @@ EOT
   default = null
 
   validation {
-    condition     = var.policy_configuration.version == null ? true : contains(["2008-10-17", "2012-10-17"], var.policy_configuration.version)
+    condition     = var.policy_configuration == null ? true : contains(["2008-10-17", "2012-10-17"], var.policy_configuration.version)
     error_message = "IAM policy document version must be either \"2008-10-17\" or \"2012-10-17\""
   }
 }
