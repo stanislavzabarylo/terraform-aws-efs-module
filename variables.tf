@@ -171,15 +171,47 @@ Configuration block for EFS replication configuration. Supports the following se
 
 <ul><li>`kms_key_id`: (Optional) The ARN, ID alias, or alias ARN of the AWS KMS key used to encrypt the destination file system.
   The default KMS key for EFS `"/aws/elasticfilesystem"` will be used</ul></li>
+
+<ul><li>`timeouts`: (Optional) Configuration block for operation timeouts
+  <ul>
+    <li>`create`: (Optional) Time to wait for replication to be created. Must be a string specifying hours (h), minutes (m) or seconds (s)</li>
+    <li>`delete`: (Optional) Time to wait for replication to be deleted. Must be a string specifying hours (h), minutes (m) or seconds (s)</li>
+  </ul>
+</li></ul>
 EOT
   type = object({
     region                 = optional(string)
     availability_zone_name = optional(string)
     file_system_id         = optional(string)
     kms_key_id             = optional(string)
+
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+    }))
   })
 
   default = null
+
+  validation {
+    condition = var.replication_configuration == null ? true : (
+      var.replication_configuration.timeouts == null ? true : (
+        var.replication_configuration.timeouts.create == null ? true :
+        can(regex("^[0-9]+(h|m|s)$", var.replication_configuration.timeouts.create))
+      )
+    )
+    error_message = "Timeouts create value must be a string specifying hours, minutes or seconds, e.g. \"2h\", `\"10m\" or \"30s\""
+  }
+
+  validation {
+    condition = var.replication_configuration == null ? true : (
+      var.replication_configuration.timeouts == null ? true : (
+        var.replication_configuration.timeouts.delete == null ? true :
+        can(regex("^[0-9]+(h|m|s)$", var.replication_configuration.timeouts.delete))
+      )
+    )
+    error_message = "Timeouts delete value must be a string specifying hours, minutes or seconds, e.g. \"2h\", \"10m\" or \"30s\""
+  }
 }
 
 variable "access_points" {
@@ -237,15 +269,36 @@ Configuration block for EFS mount targets. Accepts a list of objects with the fo
 
 <ul><li>`subnet_id`: (Required) The ID of the subnet to add the mount target in</li>
 <li>`ip_address`: (Optional) The IPv4 address within the subnet's CIDR range where the mount target will be created</li>
-<li>`security_groups`: (Optional) A list of security group IDs (up to 5 items) to associate with the mount target</li></ul>  
+<li>`security_groups`: (Optional) A list of security group IDs (up to 5 items) to associate with the mount target</li>
+<li>`timeouts`: (Optional) Configuration block for operation timeouts
+  <ul>
+    <li>`create`: (Optional) Time to wait for mount target(s) to be created. Must be a string specifying hours (h), minutes (m) or seconds (s)</li>
+    <li>`delete`: (Optional) Time to wait for mount target(s) to be deleted. Must be a string specifying hours (h), minutes (m) or seconds (s)</li>
+  </ul>
+</li></ul>
 EOT
   type = list(object({
     subnet_id       = string
     ip_address      = optional(string)
-    security_groups = optional(list(string))
+    security_groups = optional(set(string))
+
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+    }))
   }))
 
   default = null
+
+  validation {
+    condition     = var.mount_targets == null ? true : try(var.mount_targets.timeouts == null ? true : can(regex("^[0-9]+(h|m|s)$", var.mount_targets.timeouts.create)), true)
+    error_message = "Timeouts create value must be a string specifying hours, minutes or seconds, e.g. \"2h\", \"10m\" or \"30s\""
+  }
+
+  validation {
+    condition     = var.mount_targets == null ? true : try(var.mount_targets.timeouts == null ? true : can(regex("^[0-9]+(h|m|s)$", var.mount_targets.timeouts.delete)), true)
+    error_message = "Timeouts delete value must be a string specifying hours, minutes or seconds, e.g. \"2h\", \"10m\" or \"30s\""
+  }
 }
 
 variable "policy_configuration" {
@@ -299,36 +352,36 @@ Configuration block for EFS policy configuration. Supports the following setting
 EOT
   type = object({
     version                   = optional(string)
-    override_policy_documents = optional(list(any))
+    override_policy_documents = optional(set(any))
     policy_id                 = optional(string)
-    source_policy_documents   = optional(list(string))
+    source_policy_documents   = optional(set(string))
 
     statements = optional(list(object({
       sid     = optional(string)
       effect  = optional(string)
-      actions = optional(list(string))
+      actions = optional(set(string))
 
       condition = optional(object({
         test     = string
         variable = string
-        values   = list(string)
+        values   = set(string)
       }))
 
-      not_actions = optional(list(any))
+      not_actions = optional(set(any))
 
-      not_principals = optional(list(object({
-        identifiers = list(string)
+      not_principals = optional(set(object({
+        identifiers = set(string)
         type        = string
       })))
 
-      not_resources = optional(list(string))
+      not_resources = optional(set(string))
 
-      principals = optional(list(object({
-        identifiers = list(string)
+      principals = optional(set(object({
+        identifiers = set(string)
         type        = string
       })))
 
-      resources = optional(list(string))
+      resources = optional(set(string))
     })))
 
     bypass_policy_lockout_safety_check = optional(bool)
