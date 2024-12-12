@@ -56,7 +56,7 @@ EOT
       lookup(var.lifecycle_policy, "transition_to_archive", null) == null ? true : contains([
         "AFTER_1_DAY", "AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS",
         "AFTER_180_DAYS", "AFTER_270_DAYS", "AFTER_365_DAYS"
-      ], lookup(var.lifecycle_policy, "transition_to_archive"))
+      ], var.lifecycle_policy["transition_to_archive"])
     )
     error_message = "transition_to_archive must be one of: \"AFTER_1_DAY\", \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\", \"AFTER_180_DAYS\", \"AFTER_270_DAYS\", \"AFTER_365_DAYS\""
   }
@@ -66,7 +66,7 @@ EOT
       lookup(var.lifecycle_policy, "transition_to_ia", null) == null ? true : contains([
         "AFTER_1_DAY", "AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS",
         "AFTER_180_DAYS", "AFTER_270_DAYS", "AFTER_365_DAYS"
-      ], lookup(var.lifecycle_policy, "transition_to_ia"))
+      ], var.lifecycle_policy["transition_to_ia"])
     )
     error_message = "transition_to_ia must be one of: \"AFTER_1_DAY\", \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\", \"AFTER_180_DAYS\", \"AFTER_270_DAYS\", \"AFTER_365_DAYS\""
   }
@@ -74,7 +74,7 @@ EOT
   validation {
     condition = var.lifecycle_policy == null ? true : (
       lookup(var.lifecycle_policy, "transition_to_primary_storage_class", null) == null ? true :
-      lookup(var.lifecycle_policy, "transition_to_primary_storage_class") == "AFTER_1_ACCESS"
+      var.lifecycle_policy["transition_to_primary_storage_class"] == "AFTER_1_ACCESS"
     )
     error_message = "transition_to_primary_storage_class must be \"AFTER_1_ACCESS\""
   }
@@ -140,7 +140,7 @@ variable "provisioned_throughput_in_mibps" {
 variable "throughput_mode" {
   description = <<-EOT
 Throughput mode for the file system. Valid values: `"bursting"`, `"provisioned"`, or `"elastic"`.
-When using `"provisioned"`, also set `provisioned_throughput_in_mibps`". Deffults to `"bursting"`
+When using `"provisioned"`, also set `provisioned_throughput_in_mibps`". Defaults to `"bursting"`
 EOT
   type        = string
   default     = "bursting"
