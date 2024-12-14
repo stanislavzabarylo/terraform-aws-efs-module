@@ -114,13 +114,22 @@ resource "aws_efs_replication_configuration" "this" {
   source_file_system_id = aws_efs_file_system.this.id
 
   dynamic "destination" {
-    for_each = var.replication_configuration != null ? [var.replication_configuration] : []
+    for_each = try(var.replication_configuration, null) != null ? [var.replication_configuration] : []
 
     content {
       region                 = destination.value.region
       availability_zone_name = destination.value.availability_zone_name
       file_system_id         = destination.value.file_system_id
       kms_key_id             = destination.value.kms_key_id != null ? destination.value.kms_key_id : data.aws_kms_key.elastic_file_system[count.index].id
+    }
+  }
+
+  dynamic "timeouts" {
+    for_each = try(var.replication_configuration, null) != null ? [var.replication_configuration.timeouts] : []
+
+    content {
+      create = coalesce(try(timeouts.value.create, null), "20m")
+      delete = coalesce(try(timeouts.value.delete, null), "20m")
     }
   }
 }
@@ -167,6 +176,15 @@ resource "aws_efs_mount_target" "this" {
   ip_address      = var.mount_targets[count.index].ip_address
   security_groups = var.mount_targets[count.index].security_groups
   subnet_id       = var.mount_targets[count.index].subnet_id
+
+  dynamic "timeouts" {
+    for_each = try(var.mount_targets, null) != null ? [var.mount_targets[count.index].timeouts] : []
+
+    content {
+      create = coalesce(try(timeouts.value.create, null), "30m")
+      delete = coalesce(try(timeouts.value.delete, null), "10m")
+    }
+  }
 }
 
 resource "aws_efs_file_system_policy" "this" {
