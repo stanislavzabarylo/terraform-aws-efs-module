@@ -124,13 +124,9 @@ resource "aws_efs_replication_configuration" "this" {
     }
   }
 
-  dynamic "timeouts" {
-    for_each = try(var.replication_configuration, null) != null ? [var.replication_configuration.timeouts] : []
-
-    content {
-      create = coalesce(try(timeouts.value.create, null), "20m")
-      delete = coalesce(try(timeouts.value.delete, null), "20m")
-    }
+  timeouts {
+    create = coalesce(try(var.replication_configuration.timeouts.create, null), "20m")
+    delete = coalesce(try(var.replication_configuration.timeouts.delete, null), "20m")
   }
 }
 
@@ -177,13 +173,9 @@ resource "aws_efs_mount_target" "this" {
   security_groups = var.mount_targets[count.index].security_groups
   subnet_id       = var.mount_targets[count.index].subnet_id
 
-  dynamic "timeouts" {
-    for_each = try(var.mount_targets, null) != null ? [var.mount_targets[count.index].timeouts] : []
-
-    content {
-      create = coalesce(try(timeouts.value.create, null), "30m")
-      delete = coalesce(try(timeouts.value.delete, null), "10m")
-    }
+  timeouts {
+    create = coalesce(try(var.mount_targets[count.index].timeouts.create, null), "30m")
+    delete = coalesce(try(var.mount_targets[count.index].timeouts.delete, null), "10m")
   }
 }
 
