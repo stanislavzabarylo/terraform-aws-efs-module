@@ -1,4 +1,12 @@
+<!-- BEGIN_TF_DOCS -->
 # AWS Elastic File System Module
+
+## Examples
+
+[`Examples`](https://github.com/stasyk003/terraform-aws-efs-module/tree/main/examples) demonstrate use-cases and configurations of the module. They serve both as a reference for users implementing the module and as integration tests for validating module functionality.
+
+- [Complete](https://github.com/stasyk003/terraform-aws-efs-module/tree/main/examples/complete)
+- [Default](https://github.com/stasyk003/terraform-aws-efs-module/tree/main/examples/default)
 
 ## Requirements
 
@@ -83,3 +91,4 @@ No modules.
 | <a name="output_replication_configuration_source_file_system_arn"></a> [replication\_configuration\_source\_file\_system\_arn](#output\_replication\_configuration\_source\_file\_system\_arn) | The Amazon Resource Name (ARN) of the current source file system in the replication configuration |
 | <a name="output_replication_configuration_source_file_system_region"></a> [replication\_configuration\_source\_file\_system\_region](#output\_replication\_configuration\_source\_file\_system\_region) | The AWS Region in which the source Amazon EFS file system is located |
 | <a name="output_tags_all"></a> [tags\_all](#output\_tags\_all) | A map of tags assigned to the resource |
+<!-- END_TF_DOCS -->
