@@ -37,6 +37,5 @@
 **/terraform.rc
 
 # Ignore tflint and terraform-docs configuration files
-**/.tflint.hcl
 **/.terraform-docs.yml
 **/.terraform-docs.yaml
