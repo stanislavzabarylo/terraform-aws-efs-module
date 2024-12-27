@@ -1,6 +1,108 @@
 <!-- BEGIN_TF_DOCS -->
 # AWS Elastic File System Module
 
+## Usage
+
+Here is an example HCL code snippet that demonstrates how to use AWS EFS Terraform module:
+
+```hcl
+module "efs" {
+  source = "../.."
+
+  # Basic EFS configuration
+  name                            = "example-elastic-file-system"
+  creation_token                  = "example-creation-token"
+  encrypted                       = true
+  enable_automatic_backups        = true
+  kms_key_id                      = "example-kms-key-id"
+  performance_mode                = "generalPurpose"
+  throughput_mode                 = "provisioned"
+  provisioned_throughput_in_mibps = 100
+
+  # Lifecycle management
+  lifecycle_policy = {
+    transition_to_ia                    = "AFTER_7_DAYS"
+    transition_to_primary_storage_class = "AFTER_1_ACCESS"
+  }
+
+  # Access points
+  access_points = {
+    example_posix_user = {
+      ac_name = "example-posix-user"
+      posix_user = {
+        gid            = 1001
+        uid            = 1001
+        secondary_gids = [1002, 1003, 1004]
+      }
+      root_directory = {
+        path = "/example-posix-user"
+        creation_info = {
+          owner_gid   = 1001
+          owner_uid   = 1001
+          permissions = "755"
+        }
+      }
+    }
+  }
+
+  # Mount targets in multiple AZs
+  mount_targets = [
+    {
+      subnet_id       = "example-subnet-id-1"
+      security_groups = ["example-sg-id-1", "example-sg-id-2"]
+      timeouts = {
+        create = "50m"
+        delete = "40m"
+      }
+    },
+    {
+      subnet_id       = "example-subnet-id-2"
+      security_groups = ["example-sg-id-3", "example-sg-id-4"]
+      timeouts = {
+        create = "40m"
+        delete = "30m"
+      }
+    }
+  ]
+
+  # Cross-region replication
+  replication_configuration = {
+    region                 = "us-east-1"
+    availability_zone_name = "us-east-1a"
+    timeouts = {
+      create = "1h"
+      delete = "30m"
+    }
+  }
+
+  # FIle System IAM policy
+  policy_configuration = {
+    version   = "2012-10-17"
+    policy_id = "example-policy-id"
+    statements = [
+      {
+        sid = "example-sid"
+        actions = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite"
+        ]
+        principals = [
+          {
+            type        = "AWS"
+            identifiers = ["arn:aws:iam::111122223333:role/ExampleEFSRole"]
+          }
+        ]
+      }
+    ]
+    bypass_policy_lockout_safety_check = false
+  }
+
+  tags = {
+    CreatedBy = "Terraform"
+  }
+}
+```
+
 ## Examples
 
 [`Examples`](https://github.com/stasyk003/terraform-aws-efs-module/tree/main/examples) demonstrate use-cases and configurations of the module. They serve both as a reference for users implementing the module and as integration tests for validating module functionality.
@@ -36,7 +138,6 @@ No modules.
 | [aws_efs_mount_target.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/efs_mount_target) | resource |
 | [aws_efs_replication_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/efs_replication_configuration) | resource |
 | [aws_iam_policy_document.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
-| [aws_kms_key.elastic_file_system](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_key) | data source |
 
 ## Inputs
 
@@ -46,8 +147,8 @@ No modules.
 | <a name="input_availability_zone_name"></a> [availability\_zone\_name](#input\_availability\_zone\_name) | The AWS Availability Zone in which to create the file system. Used to create a file system that uses One Zone storage classes | `string` | `null` | no |
 | <a name="input_creation_token"></a> [creation\_token](#input\_creation\_token) | A unique name used to ensure idempotent file system creation. <br/>If not specified, defaults to an auto-generated string combining timestamp and UUID in the format: <br/>`"terraform-<YYYYMMDDhhmmss>-<random_uuid>"` (defined as a local value in `main.tf` file) | `string` | `null` | no |
 | <a name="input_enable_automatic_backups"></a> [enable\_automatic\_backups](#input\_enable\_automatic\_backups) | If `true`, automatic backups will be enabled for the file system. Defaults to `false` | `bool` | `false` | no |
-| <a name="input_encrypted"></a> [encrypted](#input\_encrypted) | If `true`, the disk will be encrypted. Defaults to `false` | `bool` | `false` | no |
-| <a name="input_kms_key_id"></a> [kms\_key\_id](#input\_kms\_key\_id) | ARN for the KMS encryption key. Required if encrypted is `true` | `string` | `null` | no |
+| <a name="input_encrypted"></a> [encrypted](#input\_encrypted) | If `true`, the disk will be encrypted. Defaults to `true` | `bool` | `true` | no |
+| <a name="input_kms_key_id"></a> [kms\_key\_id](#input\_kms\_key\_id) | The ARN for the KMS encryption key. When specifying `kms_key_id`, `encrypted` needs to be set to `true` | `string` | `null` | no |
 | <a name="input_lifecycle_policy"></a> [lifecycle\_policy](#input\_lifecycle\_policy) | Configuration for EFS lifecycle policy transitions. Supports the following settings:<br/><br/><ul><li>`"transition_to_archive"`: (Optional) Indicates how long it takes to transition files to the Archive storage class. <br/>  Requires `"transition_to_ia"` to be specified, with `"performance_mode"` set to `"generalPurpose"` and `"throughput_mode"` set to `"elastic"`.<br/>  Valid values: `"AFTER_1_DAY"`, `"AFTER_7_DAYS"`, `"AFTER_14_DAYS"`, `"AFTER_30_DAYS"`, `"AFTER_60_DAYS"`, `"AFTER_90_DAYS"`, <br/>  `"AFTER_180_DAYS"`, `"AFTER_270_DAYS"`, `"AFTER_365_DAYS"`</ul></li><br/><br/><ul><li>`"transition_to_ia"`: (Optional) Indicates how long it takes to transition files to the IA storage class. <br/>  Valid values: `"AFTER_1_DAY"`, `"AFTER_7_DAYS"`, `"AFTER_14_DAYS"`, `"AFTER_30_DAYS"`, `"AFTER_60_DAYS"`, `"AFTER_90_DAYS"`, <br/>  `"AFTER_180_DAYS"`, `"AFTER_270_DAYS"`, `"AFTER_365_DAYS"`</ul></li><br/><br/><ul><li>`"transition_to_primary_storage_class"`: (Optional) Indicates how long it takes to transition files back to <br/>  the primary storage class. Only valid value is `"AFTER_1_ACCESS"`</ul></li> | `map(string)` | `null` | no |
 | <a name="input_mount_targets"></a> [mount\_targets](#input\_mount\_targets) | Configuration block for EFS mount targets. Accepts a list of objects with the following settings:<br/><br/><ul><li>`subnet_id`: (Required) The ID of the subnet to add the mount target in</li><br/><li>`ip_address`: (Optional) The IPv4 address within the subnet's CIDR range where the mount target will be created</li><br/><li>`security_groups`: (Optional) A list of security group IDs (up to 5 items) to associate with the mount target</li><br/><li>`timeouts`: (Optional) Configuration block for operation timeouts<br/>  <ul><br/>    <li>`create`: (Optional) Time to wait for mount target(s) to be created. Must be a string specifying hours (h), minutes (m) or seconds (s)</li><br/>    <li>`delete`: (Optional) Time to wait for mount target(s) to be deleted. Must be a string specifying hours (h), minutes (m) or seconds (s)</li><br/>  </ul><br/></li></ul> | <pre>list(object({<br/>    subnet_id       = string<br/>    ip_address      = optional(string)<br/>    security_groups = optional(set(string))<br/><br/>    timeouts = optional(object({<br/>      create = optional(string)<br/>      delete = optional(string)<br/>    }))<br/>  }))</pre> | `null` | no |
 | <a name="input_name"></a> [name](#input\_name) | A unique name for the Elastic File System (EFS) | `string` | `"elastic-file-system"` | no |
