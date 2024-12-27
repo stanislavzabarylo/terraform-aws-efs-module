@@ -25,7 +25,10 @@ output "file_system_name" {
 
 output "file_system_number_of_mount_targets" {
   description = "The current number of mount targets that the file system has"
-  value       = try(aws_efs_file_system.this.number_of_mount_targets, null)
+  value = try(
+    length(aws_efs_mount_target.this),
+    aws_efs_file_system.this.number_of_mount_targets
+  )
 }
 
 output "file_system_owner_id" {
