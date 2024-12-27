@@ -22,8 +22,8 @@ EOT
 
 variable "encrypted" {
   type        = bool
-  description = "If `true`, the disk will be encrypted. Defaults to `false`"
-  default     = false
+  description = "If `true`, the disk will be encrypted. Defaults to `true`"
+  default     = true
 }
 
 variable "kms_key_id" {
