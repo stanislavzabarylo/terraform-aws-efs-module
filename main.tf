@@ -61,16 +61,14 @@ data "aws_iam_policy_document" "this" {
   version = var.policy_configuration.version != null ? var.policy_configuration.version : "2012-10-17"
 }
 
-data "aws_kms_key" "elastic_file_system" {
-  count  = try(var.replication_configuration != null && var.replication_configuration.kms_key_id == null, false) ? 1 : 0
-  key_id = "alias/aws/elasticfilesystem"
-}
-
 resource "aws_efs_file_system" "this" {
-  availability_zone_name = var.availability_zone_name
-  creation_token         = local.creation_token
-  encrypted              = var.encrypted
-  kms_key_id             = var.kms_key_id
+  availability_zone_name          = var.availability_zone_name
+  creation_token                  = local.creation_token
+  encrypted                       = var.kms_key_id != null ? true : var.encrypted
+  kms_key_id                      = var.kms_key_id
+  performance_mode                = var.performance_mode
+  provisioned_throughput_in_mibps = var.provisioned_throughput_in_mibps
+  throughput_mode                 = var.throughput_mode
 
   dynamic "lifecycle_policy" {
     for_each = try([for k, v in var.lifecycle_policy : { (k) = v }], [])
@@ -89,10 +87,6 @@ resource "aws_efs_file_system" "this" {
       replication_overwrite = protection.value.replication_overwrite
     }
   }
-
-  performance_mode                = var.performance_mode
-  provisioned_throughput_in_mibps = var.provisioned_throughput_in_mibps
-  throughput_mode                 = var.throughput_mode
 
   tags = merge(
     { Name = var.name },
@@ -120,7 +114,7 @@ resource "aws_efs_replication_configuration" "this" {
       region                 = destination.value.region
       availability_zone_name = destination.value.availability_zone_name
       file_system_id         = destination.value.file_system_id
-      kms_key_id             = destination.value.kms_key_id != null ? destination.value.kms_key_id : data.aws_kms_key.elastic_file_system[count.index].id
+      kms_key_id             = destination.value.kms_key_id != null ? destination.value.kms_key_id : "alias/aws/elasticfilesystem"
     }
   }
 
