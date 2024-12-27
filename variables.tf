@@ -1,38 +1,39 @@
 variable "name" {
-  description = "A unique name for the Elastic File System (EFS)"
   type        = string
+  description = "A unique name for the Elastic File System (EFS)"
   default     = "elastic-file-system"
 }
 
 variable "availability_zone_name" {
-  description = "The AWS Availability Zone in which to create the file system. Used to create a file system that uses One Zone storage classes"
   type        = string
+  description = "The AWS Availability Zone in which to create the file system. Used to create a file system that uses One Zone storage classes"
   default     = null
 }
 
 variable "creation_token" {
+  type        = string
   description = <<-EOT
 A unique name used to ensure idempotent file system creation. 
 If not specified, defaults to an auto-generated string combining timestamp and UUID in the format: 
 `"terraform-<YYYYMMDDhhmmss>-<random_uuid>"` (defined as a local value in `main.tf` file)
 EOT
-  type        = string
   default     = null
 }
 
 variable "encrypted" {
-  description = "If `true`, the disk will be encrypted. Defaults to `false`"
   type        = bool
+  description = "If `true`, the disk will be encrypted. Defaults to `false`"
   default     = false
 }
 
 variable "kms_key_id" {
-  description = "ARN for the KMS encryption key. Required if encrypted is `true`"
   type        = string
+  description = "The ARN for the KMS encryption key. When specifying `kms_key_id`, `encrypted` needs to be set to `true`"
   default     = null
 }
 
 variable "lifecycle_policy" {
+  type        = map(string)
   description = <<-EOT
 Configuration for EFS lifecycle policy transitions. Supports the following settings:
 
@@ -48,7 +49,6 @@ Configuration for EFS lifecycle policy transitions. Supports the following setti
 <ul><li>`"transition_to_primary_storage_class"`: (Optional) Indicates how long it takes to transition files back to 
   the primary storage class. Only valid value is `"AFTER_1_ACCESS"`</ul></li>
 EOT
-  type        = map(string)
   default     = null
 
   validation {
@@ -89,6 +89,9 @@ EOT
 }
 
 variable "protection" {
+  type = object({
+    replication_overwrite = optional(string)
+  })
   description = <<-EOT
 Configuration block for EFS file system protection settings. Supports the following settings:
 
@@ -98,11 +101,7 @@ Configuration block for EFS file system protection settings. Supports the follow
   <li>`"DISABLED"`: Prevents the destination file system from overwriting the source file system</li></ul>
 </li></ul>
 EOT
-  type = object({
-    replication_overwrite = optional(string)
-  })
-
-  default = null
+  default     = null
 
   validation {
     condition     = var.protection == null ? true : var.protection.replication_overwrite == null ? true : contains(["ENABLED", "DISABLED"], var.protection.replication_overwrite)
@@ -111,8 +110,8 @@ EOT
 }
 
 variable "performance_mode" {
-  description = "The file system performance mode. Can be either `\"generalPurpose\"` or `\"maxIO\"`. Defaults to `\"generalPurpose\"`"
   type        = string
+  description = "The file system performance mode. Can be either `\"generalPurpose\"` or `\"maxIO\"`. Defaults to `\"generalPurpose\"`"
   default     = "generalPurpose"
 
   validation {
@@ -122,8 +121,8 @@ variable "performance_mode" {
 }
 
 variable "provisioned_throughput_in_mibps" {
-  description = "The throughput, measured in MiB/s, to provision for the file system. Only applicable with `throughput_mode` set to `\"provisioned\"`"
   type        = number
+  description = "The throughput, measured in MiB/s, to provision for the file system. Only applicable with `throughput_mode` set to `\"provisioned\"`"
   default     = null
 
   validation {
@@ -138,11 +137,11 @@ variable "provisioned_throughput_in_mibps" {
 }
 
 variable "throughput_mode" {
+  type        = string
   description = <<-EOT
 Throughput mode for the file system. Valid values: `"bursting"`, `"provisioned"`, or `"elastic"`.
 When using `"provisioned"`, also set `provisioned_throughput_in_mibps`". Defaults to `"bursting"`
 EOT
-  type        = string
   default     = "bursting"
 
   validation {
@@ -152,12 +151,23 @@ EOT
 }
 
 variable "enable_automatic_backups" {
-  description = "If `true`, automatic backups will be enabled for the file system. Defaults to `false`"
   type        = bool
+  description = "If `true`, automatic backups will be enabled for the file system. Defaults to `false`"
   default     = false
 }
 
 variable "replication_configuration" {
+  type = object({
+    region                 = optional(string)
+    availability_zone_name = optional(string)
+    file_system_id         = optional(string)
+    kms_key_id             = optional(string)
+
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+    }))
+  })
   description = <<-EOT
 Configuration block for EFS replication configuration. Supports the following settings:
 
@@ -179,19 +189,7 @@ Configuration block for EFS replication configuration. Supports the following se
   </ul>
 </li></ul>
 EOT
-  type = object({
-    region                 = optional(string)
-    availability_zone_name = optional(string)
-    file_system_id         = optional(string)
-    kms_key_id             = optional(string)
-
-    timeouts = optional(object({
-      create = optional(string)
-      delete = optional(string)
-    }))
-  })
-
-  default = null
+  default     = null
 
   validation {
     condition = var.replication_configuration == null ? true : (
@@ -215,6 +213,22 @@ EOT
 }
 
 variable "access_points" {
+  type = map(object({
+    ac_name = optional(string)
+    posix_user = optional(object({
+      gid            = number
+      secondary_gids = optional(set(number))
+      uid            = number
+    }))
+    root_directory = optional(object({
+      path = optional(string)
+      creation_info = optional(object({
+        owner_gid   = number
+        owner_uid   = number
+        permissions = string
+      }))
+    }))
+  }))
   description = <<-EOT
 A map of access points to create for the file system. Each access point supports the following settings:
 
@@ -243,27 +257,20 @@ A map of access points to create for the file system. Each access point supports
   </li>
 </ul>
 EOT
-  type = map(object({
-    ac_name = optional(string)
-    posix_user = optional(object({
-      gid            = number
-      secondary_gids = optional(set(number))
-      uid            = number
-    }))
-    root_directory = optional(object({
-      path = optional(string)
-      creation_info = optional(object({
-        owner_gid   = number
-        owner_uid   = number
-        permissions = string
-      }))
-    }))
-  }))
-
-  default = null
+  default     = null
 }
 
 variable "mount_targets" {
+  type = list(object({
+    subnet_id       = string
+    ip_address      = optional(string)
+    security_groups = optional(set(string))
+
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+    }))
+  }))
   description = <<-EOT
 Configuration block for EFS mount targets. Accepts a list of objects with the following settings:
 
@@ -277,18 +284,7 @@ Configuration block for EFS mount targets. Accepts a list of objects with the fo
   </ul>
 </li></ul>
 EOT
-  type = list(object({
-    subnet_id       = string
-    ip_address      = optional(string)
-    security_groups = optional(set(string))
-
-    timeouts = optional(object({
-      create = optional(string)
-      delete = optional(string)
-    }))
-  }))
-
-  default = null
+  default     = null
 
   validation {
     condition     = var.mount_targets == null ? true : try(var.mount_targets.timeouts == null ? true : can(regex("^[0-9]+(h|m|s)$", var.mount_targets.timeouts.create)), true)
@@ -302,6 +298,42 @@ EOT
 }
 
 variable "policy_configuration" {
+  type = object({
+    version                   = optional(string)
+    override_policy_documents = optional(set(any))
+    policy_id                 = optional(string)
+    source_policy_documents   = optional(set(string))
+
+    statements = optional(list(object({
+      sid     = optional(string)
+      effect  = optional(string)
+      actions = optional(set(string))
+
+      condition = optional(object({
+        test     = string
+        variable = string
+        values   = set(string)
+      }))
+
+      not_actions = optional(set(any))
+
+      not_principals = optional(set(object({
+        identifiers = set(string)
+        type        = string
+      })))
+
+      not_resources = optional(set(string))
+
+      principals = optional(set(object({
+        identifiers = set(string)
+        type        = string
+      })))
+
+      resources = optional(set(string))
+    })))
+
+    bypass_policy_lockout_safety_check = optional(bool)
+  })
   description = <<-EOT
 Configuration block for EFS policy configuration. Supports the following settings:
 
@@ -350,43 +382,7 @@ Configuration block for EFS policy configuration. Supports the following setting
 <ul><li>`bypass_policy_lockout_safety_check`: (Optional) A flag to indicate whether to bypass the "aws:PrincipalArn" condition key policy lockout safety check. 
   Setting this value to `true` increases the risk that the file system becomes locked</ul></li>
 EOT
-  type = object({
-    version                   = optional(string)
-    override_policy_documents = optional(set(any))
-    policy_id                 = optional(string)
-    source_policy_documents   = optional(set(string))
-
-    statements = optional(list(object({
-      sid     = optional(string)
-      effect  = optional(string)
-      actions = optional(set(string))
-
-      condition = optional(object({
-        test     = string
-        variable = string
-        values   = set(string)
-      }))
-
-      not_actions = optional(set(any))
-
-      not_principals = optional(set(object({
-        identifiers = set(string)
-        type        = string
-      })))
-
-      not_resources = optional(set(string))
-
-      principals = optional(set(object({
-        identifiers = set(string)
-        type        = string
-      })))
-
-      resources = optional(set(string))
-    })))
-
-    bypass_policy_lockout_safety_check = optional(bool)
-  })
-  default = null
+  default     = null
 
   validation {
     condition     = var.policy_configuration == null ? true : contains(["2008-10-17", "2012-10-17"], var.policy_configuration.version)
@@ -395,7 +391,7 @@ EOT
 }
 
 variable "tags" {
-  description = "A map of tags to add to all resources"
   type        = map(string)
+  description = "A map of tags to add to all resources"
   default     = {}
 }
