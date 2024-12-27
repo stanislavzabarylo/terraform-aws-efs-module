@@ -35,7 +35,3 @@
 # Ignore CLI configuration files
 **/.terraformrc
 **/terraform.rc
-
-# Ignore tflint and terraform-docs configuration files
-**/.terraform-docs.yml
-**/.terraform-docs.yaml
