@@ -50,42 +50,6 @@ Configuration for EFS lifecycle policy transitions. Supports the following setti
   the primary storage class. Only valid value is `"AFTER_1_ACCESS"`</ul></li>
 EOT
   default     = null
-
-  validation {
-    condition = var.lifecycle_policy == null ? true : (
-      lookup(var.lifecycle_policy, "transition_to_archive", null) == null ? true : contains([
-        "AFTER_1_DAY", "AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS",
-        "AFTER_180_DAYS", "AFTER_270_DAYS", "AFTER_365_DAYS"
-      ], var.lifecycle_policy["transition_to_archive"])
-    )
-    error_message = "transition_to_archive must be one of: \"AFTER_1_DAY\", \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\", \"AFTER_180_DAYS\", \"AFTER_270_DAYS\", \"AFTER_365_DAYS\""
-  }
-
-  validation {
-    condition = var.lifecycle_policy == null ? true : (
-      lookup(var.lifecycle_policy, "transition_to_ia", null) == null ? true : contains([
-        "AFTER_1_DAY", "AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS",
-        "AFTER_180_DAYS", "AFTER_270_DAYS", "AFTER_365_DAYS"
-      ], var.lifecycle_policy["transition_to_ia"])
-    )
-    error_message = "transition_to_ia must be one of: \"AFTER_1_DAY\", \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\", \"AFTER_180_DAYS\", \"AFTER_270_DAYS\", \"AFTER_365_DAYS\""
-  }
-
-  validation {
-    condition = var.lifecycle_policy == null ? true : (
-      lookup(var.lifecycle_policy, "transition_to_primary_storage_class", null) == null ? true :
-      var.lifecycle_policy["transition_to_primary_storage_class"] == "AFTER_1_ACCESS"
-    )
-    error_message = "transition_to_primary_storage_class must be \"AFTER_1_ACCESS\""
-  }
-
-  validation {
-    condition = var.lifecycle_policy == null ? true : (
-      lookup(var.lifecycle_policy, "transition_to_archive", null) == null ? true :
-      lookup(var.lifecycle_policy, "transition_to_ia", null) != null
-    )
-    error_message = "transition_to_archive requires transition_to_ia to be set"
-  }
 }
 
 variable "protection" {
@@ -102,38 +66,18 @@ Configuration block for EFS file system protection settings. Supports the follow
 </li></ul>
 EOT
   default     = null
-
-  validation {
-    condition     = var.protection == null ? true : var.protection.replication_overwrite == null ? true : contains(["ENABLED", "DISABLED"], var.protection.replication_overwrite)
-    error_message = "replication_overwrite must be either \"ENABLED\" or \"DISABLED\""
-  }
 }
 
 variable "performance_mode" {
   type        = string
   description = "The file system performance mode. Can be either `\"generalPurpose\"` or `\"maxIO\"`. Defaults to `\"generalPurpose\"`"
   default     = "generalPurpose"
-
-  validation {
-    condition     = contains(["generalPurpose", "maxIO"], var.performance_mode)
-    error_message = "Performance mode must be either \"generalPurpose\" or \"maxIO\"."
-  }
 }
 
 variable "provisioned_throughput_in_mibps" {
   type        = number
   description = "The throughput, measured in MiB/s, to provision for the file system. Only applicable with `throughput_mode` set to `\"provisioned\"`"
   default     = null
-
-  validation {
-    condition     = var.provisioned_throughput_in_mibps == null ? true : var.provisioned_throughput_in_mibps >= 1
-    error_message = "Provisioned throughput must be greater than or equal to 1 MiB/s"
-  }
-
-  validation {
-    condition     = var.provisioned_throughput_in_mibps == null ? true : var.provisioned_throughput_in_mibps <= 10240
-    error_message = "Provisioned throughput cannot exceed 10240 MiB/s (10 GiB/s)"
-  }
 }
 
 variable "throughput_mode" {
@@ -143,11 +87,6 @@ Throughput mode for the file system. Valid values: `"bursting"`, `"provisioned"`
 When using `"provisioned"`, also set `provisioned_throughput_in_mibps`". Defaults to `"bursting"`
 EOT
   default     = "bursting"
-
-  validation {
-    condition     = contains(["bursting", "provisioned", "elastic"], var.throughput_mode)
-    error_message = "Throughput mode must be one of: \"bursting\", \"provisioned\", or \"elastic\""
-  }
 }
 
 variable "enable_automatic_backups" {
@@ -190,26 +129,6 @@ Configuration block for EFS replication configuration. Supports the following se
 </li></ul>
 EOT
   default     = null
-
-  validation {
-    condition = var.replication_configuration == null ? true : (
-      var.replication_configuration.timeouts == null ? true : (
-        var.replication_configuration.timeouts.create == null ? true :
-        can(regex("^[0-9]+(h|m|s)$", var.replication_configuration.timeouts.create))
-      )
-    )
-    error_message = "Timeouts create value must be a string specifying hours, minutes or seconds, e.g. \"2h\", `\"10m\" or \"30s\""
-  }
-
-  validation {
-    condition = var.replication_configuration == null ? true : (
-      var.replication_configuration.timeouts == null ? true : (
-        var.replication_configuration.timeouts.delete == null ? true :
-        can(regex("^[0-9]+(h|m|s)$", var.replication_configuration.timeouts.delete))
-      )
-    )
-    error_message = "Timeouts delete value must be a string specifying hours, minutes or seconds, e.g. \"2h\", \"10m\" or \"30s\""
-  }
 }
 
 variable "access_points" {
@@ -285,16 +204,6 @@ Configuration block for EFS mount targets. Accepts a list of objects with the fo
 </li></ul>
 EOT
   default     = null
-
-  validation {
-    condition     = var.mount_targets == null ? true : try(var.mount_targets.timeouts == null ? true : can(regex("^[0-9]+(h|m|s)$", var.mount_targets.timeouts.create)), true)
-    error_message = "Timeouts create value must be a string specifying hours, minutes or seconds, e.g. \"2h\", \"10m\" or \"30s\""
-  }
-
-  validation {
-    condition     = var.mount_targets == null ? true : try(var.mount_targets.timeouts == null ? true : can(regex("^[0-9]+(h|m|s)$", var.mount_targets.timeouts.delete)), true)
-    error_message = "Timeouts delete value must be a string specifying hours, minutes or seconds, e.g. \"2h\", \"10m\" or \"30s\""
-  }
 }
 
 variable "policy_configuration" {
@@ -383,11 +292,6 @@ Configuration block for EFS policy configuration. Supports the following setting
   Setting this value to `true` increases the risk that the file system becomes locked</ul></li>
 EOT
   default     = null
-
-  validation {
-    condition     = var.policy_configuration == null ? true : contains(["2008-10-17", "2012-10-17"], var.policy_configuration.version)
-    error_message = "IAM policy document version must be either \"2008-10-17\" or \"2012-10-17\""
-  }
 }
 
 variable "tags" {
