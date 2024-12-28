@@ -177,6 +177,101 @@ A map of access points to create for the file system. Each access point supports
 </ul>
 EOT
   default     = null
+
+  validation {
+    condition = (
+      var.access_points == null ? true : (
+        alltrue([
+          for ap in var.access_points :
+          ap.posix_user == null ? true : (
+            ap.posix_user.uid >= 0 && ap.posix_user.uid <= 4294967295
+          )
+        ])
+      )
+    )
+    error_message = "POSIX user ID (uid) must be between 0 and 4294967295"
+  }
+
+  validation {
+    condition = (
+      var.access_points == null ? true : (
+        alltrue([
+          for ap in var.access_points :
+          ap.posix_user == null ? true : (
+            ap.posix_user.gid >= 0 && ap.posix_user.gid <= 4294967295
+          )
+        ])
+      )
+    )
+    error_message = "POSIX group ID (gid) must be between 0 and 4294967295"
+  }
+
+  validation {
+    condition = (
+      var.access_points == null ? true : (
+        alltrue([
+          for ap in var.access_points :
+          ap.posix_user == null ? true : (
+            ap.posix_user.secondary_gids == null ? true : (
+              alltrue([
+                for gid in ap.posix_user.secondary_gids :
+                gid >= 0 && gid <= 4294967295
+              ])
+            )
+          )
+        ])
+      )
+    )
+    error_message = "Secondary POSIX group IDs must be between 0 and 4294967295"
+  }
+
+  validation {
+    condition = (
+      var.access_points == null ? true : (
+        alltrue([
+          for ap in var.access_points :
+          ap.root_directory == null ? true : (
+            ap.root_directory.creation_info == null ? true : (
+              ap.root_directory.creation_info.owner_uid >= 0 && ap.root_directory.creation_info.owner_uid <= 4294967295
+            )
+          )
+        ])
+      )
+    )
+    error_message = "Root directory owner UID must be between 0 and 4294967295"
+  }
+
+  validation {
+    condition = (
+      var.access_points == null ? true : (
+        alltrue([
+          for ap in var.access_points :
+          ap.root_directory == null ? true : (
+            ap.root_directory.creation_info == null ? true : (
+              ap.root_directory.creation_info.owner_gid >= 0 && ap.root_directory.creation_info.owner_gid <= 4294967295
+            )
+          )
+        ])
+      )
+    )
+    error_message = "Root directory owner GID must be between 0 and 4294967295"
+  }
+
+  validation {
+    condition = (
+      var.access_points == null ? true : (
+        alltrue([
+          for ap in var.access_points :
+          ap.root_directory == null ? true : (
+            ap.root_directory.creation_info == null ? true : (
+              can(regex("^[0-7]?[0-7]{3}$", ap.root_directory.creation_info.permissions))
+            )
+          )
+        ])
+      )
+    )
+    error_message = "Root directory permissions must be a valid 3 or 4-digit octal string (e.g., \"755\" or \"0755\")."
+  }
 }
 
 variable "mount_targets" {
