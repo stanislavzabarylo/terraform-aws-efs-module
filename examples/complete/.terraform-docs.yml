@@ -1,0 +1,25 @@
+formatter: markdown table
+
+content: |
+  # Complete AWS Elastic File System Module Example
+
+  This is a complete AWS Elastic File System example with all features enabled, including encryption, backup policies, lifecycle management, replication configuration, access points, and mount targets, to demonstrate the full range of the module's capabilitiesThis is a complete AWS Elastic File System example with all features enabled, including encryption, backup policies, lifecycle management, replication configuration, access points, and mount targets, to demonstrate the full range of the module's capabilities
+
+  ## Usage
+
+  To use this complete example, execute the following commands:
+  ```bash
+  $ terraform init
+  $ terraform plan
+  $ terraform apply
+  ```
+
+  {{ .Content }}
+
+output:
+  file: README.md
+  mode: inject
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
