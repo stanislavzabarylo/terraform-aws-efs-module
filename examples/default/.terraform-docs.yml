@@ -1,0 +1,25 @@
+formatter: markdown table
+
+content: |
+  # Default AWS Elastic File System Module Example
+
+  The example in this directory creates an AWS Elastic File System using the default configuration to demonstrate the basic usage of the module
+  
+  ## Usage
+
+  To use this default example, execute the following commands:
+  ```bash
+  $ terraform init
+  $ terraform plan
+  $ terraform apply
+  ```
+
+  {{ .Content }}
+
+output:
+  file: README.md
+  mode: inject
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
