@@ -133,7 +133,7 @@ EOT
 
 variable "access_points" {
   type = map(object({
-    ac_name = optional(string)
+    name = optional(string)
     posix_user = optional(object({
       gid            = number
       secondary_gids = optional(set(number))
@@ -151,7 +151,7 @@ variable "access_points" {
   description = <<-EOT
 A map of access points to create for the file system. Each access point supports the following settings:
 
-<ul><li>`ac_name`</ul></li>: (Optional) A descriptive name for the access point.</ul></li>
+<ul><li>`name`</ul></li>: (Optional) A descriptive name for the access point.</ul></li>
 
 <ul>
   <li>`posix_user`: (Optional) The operating system user and group applied to all file system requests made using the access point
