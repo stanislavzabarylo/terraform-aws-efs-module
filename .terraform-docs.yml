@@ -46,7 +46,37 @@ content: |
         }
       }
     }
-  
+
+    # Security Group Configuration for EFS Mount Targets
+    security_group_configuration = {
+      description = "Security group for EFS mount targets"
+      name_prefix = "efs-"
+      vpc_id      = "vpc-1234567890"
+
+      # Ingress rules are automatically configured for EFS port 2049
+      ingress_rules = {
+        allow_vpc = {
+          description = "Allow NFS access from VPC"
+          cidr_blocks = ["10.0.0.0/16"]
+        }
+        allow_specific_sg = {
+          description              = "Allow NFS from specific security group"
+          source_security_group_id = "example-sg-0"
+        }
+      }
+
+      # Configurable egress rules
+      egress_rules = {
+        allow_all = {
+          description = "Allow all outbound traffic"
+          protocol    = "-1"
+          from_port   = "0"
+          to_port     = "0"
+          cidr_blocks = ["0.0.0.0/0"]
+        }
+      }
+    }
+    
     # Mount targets in multiple AZs
     mount_targets = [
       {
@@ -77,7 +107,7 @@ content: |
       }
     }
   
-    # FIle System IAM policy
+    # File System IAM policy
     policy_configuration = {
       version   = "2012-10-17"
       policy_id = "example-policy-id"

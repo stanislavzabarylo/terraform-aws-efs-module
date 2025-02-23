@@ -164,7 +164,7 @@ resource "aws_efs_mount_target" "this" {
 
   file_system_id  = aws_efs_file_system.this.id
   ip_address      = var.mount_targets[count.index].ip_address
-  security_groups = var.mount_targets[count.index].security_groups
+  security_groups = var.security_group_configuration != null ? concat([aws_security_group.this[0].id], tolist(var.mount_targets[count.index].security_groups)) : tolist(var.mount_targets[count.index].security_groups)
   subnet_id       = var.mount_targets[count.index].subnet_id
 
   timeouts {
@@ -179,4 +179,45 @@ resource "aws_efs_file_system_policy" "this" {
   file_system_id                     = aws_efs_file_system.this.id
   policy                             = data.aws_iam_policy_document.this[0].json
   bypass_policy_lockout_safety_check = var.policy_configuration.bypass_policy_lockout_safety_check != null ? var.policy_configuration.bypass_policy_lockout_safety_check : false
+}
+
+resource "aws_security_group" "this" {
+  count = var.security_group_configuration != null ? 1 : 0
+
+  description = var.security_group_configuration.description
+  name_prefix = var.security_group_configuration.name_prefix
+  name        = var.security_group_configuration.name
+  vpc_id      = var.security_group_configuration.vpc_id
+}
+
+resource "aws_security_group_rule" "ingress" {
+  for_each = var.security_group_configuration.ingress_rules != null ? var.security_group_configuration.ingress_rules : {}
+
+  security_group_id        = aws_security_group.this[0].id
+  description              = each.value.description
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 2049
+  to_port                  = 2049
+  cidr_blocks              = each.value.cidr_blocks
+  ipv6_cidr_blocks         = each.value.ipv6_cidr_blocks
+  prefix_list_ids          = each.value.prefix_list_ids
+  self                     = each.value.self
+  source_security_group_id = each.value.source_security_group_id
+}
+
+resource "aws_security_group_rule" "egress" {
+  for_each = var.security_group_configuration.egress_rules != null ? var.security_group_configuration.egress_rules : {}
+
+  security_group_id        = aws_security_group.this[0].id
+  description              = each.value.description
+  type                     = "egress"
+  protocol                 = each.value.protocol
+  from_port                = each.value.from_port
+  to_port                  = each.value.to_port
+  cidr_blocks              = each.value.cidr_blocks
+  ipv6_cidr_blocks         = each.value.ipv6_cidr_blocks
+  prefix_list_ids          = each.value.prefix_list_ids
+  self                     = each.value.self
+  source_security_group_id = each.value.source_security_group_id
 }
