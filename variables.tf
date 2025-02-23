@@ -1,7 +1,7 @@
 variable "name" {
   type        = string
   description = "A unique name for the Elastic File System (EFS)"
-  default     = "elastic-file-system"
+  default     = null
 }
 
 variable "availability_zone_name" {
@@ -385,6 +385,70 @@ Configuration block for EFS policy configuration. Supports the following setting
 
 <ul><li>`bypass_policy_lockout_safety_check`: (Optional) A flag to indicate whether to bypass the "aws:PrincipalArn" condition key policy lockout safety check. 
   Setting this value to `true` increases the risk that the file system becomes locked</ul></li>
+EOT
+  default     = null
+}
+
+variable "security_group_configuration" {
+  type = object({
+    description = optional(string)
+    name_prefix = optional(string)
+    name        = optional(string)
+    vpc_id      = optional(string)
+
+    ingress_rules = optional(map(object({
+      description              = optional(string)
+      cidr_blocks              = optional(set(string))
+      ipv6_cidr_blocks         = optional(set(string))
+      prefix_list_ids          = optional(set(string))
+      self                     = optional(bool)
+      source_security_group_id = optional(string)
+    })))
+
+    egress_rules = optional(map(object({
+      description              = optional(string)
+      protocol                 = string
+      from_port                = string
+      to_port                  = string
+      cidr_blocks              = optional(set(string))
+      ipv6_cidr_blocks         = optional(set(string))
+      prefix_list_ids          = optional(set(string))
+      self                     = optional(bool)
+      source_security_group_id = optional(string)
+    })))
+  })
+  description = <<-EOT
+Configuration for AWS security group with flexible rule management:
+
+<ul>
+<li>`description`: (Optional) The description of the security group</li>
+<li>`name_prefix`: (Optional) The prefix for generating a unique security group name</li>
+<li>`name`: (Optional) The exact name for the security group</li>
+<li>`vpc_id`: (Optional) The VPC ID where the security group will be created</li>
+<li>`ingress_rules`: (Optional) The map of security group ingress rules with granular configuration
+ <ul>
+   <li>`description`: (Optional) The description for individual rule</li>
+   <li>`cidr_blocks`: (Optional) The IPv4 CIDR ranges for rule</li>
+   <li>`ipv6_cidr_blocks`: (Optional) The IPv6 CIDR ranges for rule</li>
+   <li>`prefix_list_ids`: (Optional) The referenced prefix lists</li>
+   <li>`self`: (Optional) Whether rule references the security group itself</li>
+   <li>`source_security_group_id`: (Optional) The source security group for rule</li>
+ </ul>
+ </li>
+<li>`egress_rules`: (Optional) The map of security group egress rules with granular configuration
+ <ul>
+   <li>`description`: (Optional) The description for individual rule</li>
+   <li>`protocol`: (Required) The protocol for rule (e.g. `"tcp"`)</li>
+   <li>`from_port`: (Required) The start port for rule (e.g. `"80"`)</li>
+   <li>`to_port`: (Required) The end port for rule (e.g. `"80"`)</li>
+   <li>`cidr_blocks`: (Optional) The IPv4 CIDR ranges for rule</li>
+   <li>`ipv6_cidr_blocks`: (Optional) The IPv6 CIDR ranges for rule</li>
+   <li>`prefix_list_ids`: (Optional) The referenced prefix lists</li>
+   <li>`self`: (Optional) Whether rule references the security group itself</li>
+   <li>`source_security_group_id`: (Optional) The source security group for rule</li>
+ </ul>
+</li>
+</ul>
 EOT
   default     = null
 }
