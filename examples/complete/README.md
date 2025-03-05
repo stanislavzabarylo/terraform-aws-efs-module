@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # Complete AWS Elastic File System Module Example
 
-This is a complete AWS Elastic File System example with all features enabled, including encryption, backup policies, lifecycle management, replication configuration, access points, and mount targets, to demonstrate the full range of the module's capabilitiesThis is a complete AWS Elastic File System example with all features enabled, including encryption, backup policies, lifecycle management, replication configuration, access points, and mount targets, to demonstrate the full range of the module's capabilities
+This is a complete AWS Elastic File System example with all features enabled, including encryption, backup policies, lifecycle management, replication configuration, access points, mount targets with security group configuration to control network access, and to demonstrate the full range of the module's capabilities
 
 ## Usage
 
@@ -23,7 +23,7 @@ $ terraform apply
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.40 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.82.2 |
 
 ## Modules
 
