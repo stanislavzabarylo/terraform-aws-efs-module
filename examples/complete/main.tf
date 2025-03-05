@@ -14,8 +14,6 @@ data "aws_iam_role" "example" {
 }
 
 resource "aws_vpc" "example" {
-  #checkov:skip=CKV2_AWS_11:Not needed as this is a example VPC and flow logging is not required for demonstration purposes
-  #checkov:skip=CKV2_AWS_12:Not needed as a separate security group is created and used for EFS mount targets, not the default SG    
   cidr_block = local.cidr_block
 
   tags = {
@@ -36,7 +34,6 @@ resource "aws_subnet" "example" {
 }
 
 resource "aws_security_group" "example" {
-  #checkov:skip=CKV2_AWS_5:This checkov check are not needed since the security group attached to EFS mount targets
   name        = "example-sg"
   vpc_id      = aws_vpc.example.id
   description = "Example EFS mount target security group"
@@ -103,10 +100,35 @@ module "efs_complete" {
     }
   }
 
+  # Security Group Configuration for EFS Mount Targets
+  security_group_configuration = {
+    description = "Example EFS default security group"
+    name        = "efs-test"
+    vpc_id = aws_vpc.example.id
+    
+    ingress_rules = {
+      vpc = {
+        description = "Allow traffic from VPC"
+        cidr_blocks = [aws_vpc.example.cidr_block]
+      }
+    }
+    egress_rules = {
+      all = {
+        description = "Allow all outbound traffic"
+        protocol    = "-1"
+        from_port   = 0
+        to_port     = 0
+        cidr_blocks = ["0.0.0.0/0"]
+      }
+    }
+  }
+
   # Mount Targets Configuration
   mount_targets = [
     {
-      subnet_id       = aws_subnet.example[0].id
+      subnet_id = aws_subnet.example[0].id
+
+      # Concatenates aws_security_group.example.id and Configured Security Group from security_group_configuration input
       security_groups = [aws_security_group.example.id]
       timeouts = {
         # Custom timeout for mount target creation and deletion
