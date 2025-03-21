@@ -6,6 +6,7 @@
     "ghcr.io/devcontainers/features/terraform:1": {},
     "ghcr.io/devcontainers-extra/features/terraform-docs:1": {},
     "ghcr.io/prulloac/devcontainer-features/pre-commit:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers-extra/features/act:1": {},
     "ghcr.io/duduribeiro/devcontainer-features/neovim:1": {}
   },
@@ -15,6 +16,7 @@
     "tflint": "tflint --version",
     "terraform-docs": "terraform-docs --version",
     "pre-commit": "pre-commit --version",
+    "docker": "docker --version",
     "act": "act --version",
     "neovim": "nvim --version"
   }
