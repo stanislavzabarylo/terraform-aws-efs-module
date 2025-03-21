@@ -1,0 +1,21 @@
+{
+  "name": "Terraform Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "features": {
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/devcontainers/features/terraform:1": {},
+    "ghcr.io/devcontainers-extra/features/terraform-docs:1": {},
+    "ghcr.io/prulloac/devcontainer-features/pre-commit:1": {},
+    "ghcr.io/devcontainers-extra/features/act:1": {},
+    "ghcr.io/duduribeiro/devcontainer-features/neovim:1": {}
+  },
+  "postCreateCommand": {
+    "aws": "aws --version",
+    "terraform": "terraform -version",
+    "tflint": "tflint --version",
+    "terraform-docs": "terraform-docs --version",
+    "pre-commit": "pre-commit --version",
+    "act": "act --version",
+    "neovim": "nvim --version"
+  }
+}
