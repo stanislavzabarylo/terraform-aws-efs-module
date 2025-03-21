@@ -1,0 +1,22 @@
+name: Terraform Module Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.tf'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'stanislavzabarylo'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Release
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          semantic_version: 23.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
