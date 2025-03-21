@@ -104,8 +104,8 @@ module "efs_complete" {
   security_group_configuration = {
     description = "Example EFS default security group"
     name        = "efs-test"
-    vpc_id = aws_vpc.example.id
-    
+    vpc_id      = aws_vpc.example.id
+
     ingress_rules = {
       vpc = {
         description = "Allow traffic from VPC"
